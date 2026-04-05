@@ -1,0 +1,231 @@
+# ⚽ KickPot DB 관계 설계 (ERD) v1.0
+
+---
+
+## 🧱 1. 핵심 엔티티
+
+- User
+- Team
+- TeamMember
+- Match
+- Vote / VoteOption / VoteResponse
+- Lineup
+- Record / RecordEvent
+- Post / Comment
+
+---
+
+## 👤 2. User
+
+| 필드 | 타입 |
+|------|------|
+| id | UUID (PK) |
+| email | string |
+| nickname | string |
+| profile_image | string |
+| bio | text |
+| main_position | enum |
+
+---
+
+## 🧑‍🤝‍🧑 3. Team
+
+| 필드 | 타입 |
+|------|------|
+| id | UUID (PK) |
+| name | string |
+| logo_url | string |
+| cover_image_url | string |
+| description | text |
+| owner_id | UUID (FK → User.id) |
+
+---
+
+## 👥 4. TeamMember
+
+👉 User - Team 다대다 관계
+
+| 필드 | 타입 |
+|------|------|
+| id | UUID (PK) |
+| user_id | UUID (FK → User.id) |
+| team_id | UUID (FK → Team.id) |
+| role | enum (owner, member) |
+
+---
+
+## 📝 5. Post (팀 게시판)
+
+| 필드 | 타입 |
+|------|------|
+| id | UUID (PK) |
+| team_id | UUID (FK → Team.id) |
+| user_id | UUID (FK → User.id) |
+| content | text |
+| created_at | timestamp |
+
+---
+
+## 💬 6. Comment
+
+| 필드 | 타입 |
+|------|------|
+| id | UUID (PK) |
+| post_id | UUID (FK → Post.id) |
+| user_id | UUID (FK → User.id) |
+| content | text |
+
+---
+
+## 🗳️ 7. Vote
+
+| 필드 | 타입 |
+|------|------|
+| id | UUID (PK) |
+| team_id | UUID (FK → Team.id) |
+| match_id | UUID (nullable FK → Match.id) |
+| type | enum (date, participant) |
+
+---
+
+## 🗳️ VoteOption
+
+| 필드 | 타입 |
+|------|------|
+| id | UUID (PK) |
+| vote_id | UUID (FK → Vote.id) |
+| label | string |
+
+---
+
+## 🗳️ VoteResponse
+
+| 필드 | 타입 |
+|------|------|
+| id | UUID (PK) |
+| user_id | UUID (FK → User.id) |
+| option_id | UUID (FK → VoteOption.id) |
+
+---
+
+## ⚽ 8. Match
+
+| 필드 | 타입 |
+|------|------|
+| id | UUID (PK) |
+| team_a_id | UUID (FK → Team.id) |
+| team_b_id | UUID (FK → Team.id) |
+| date | timestamp |
+| location | string |
+| status | enum (pending, accepted, rejected, completed) |
+
+---
+
+## 👥 9. Participant (참여자)
+
+| 필드 | 타입 |
+|------|------|
+| id | UUID (PK) |
+| match_id | UUID (FK → Match.id) |
+| user_id | UUID (FK → User.id) |
+
+---
+
+## 🧠 10. Lineup
+
+| 필드 | 타입 |
+|------|------|
+| id | UUID (PK) |
+| match_id | UUID (FK → Match.id) |
+| user_id | UUID (FK → User.id) |
+| position | enum (GK, DF, MF, FW) |
+
+---
+
+## 📊 11. Record
+
+| 필드 | 타입 |
+|------|------|
+| id | UUID (PK) |
+| match_id | UUID (FK → Match.id) |
+| score_a | int |
+| score_b | int |
+| status | enum (pending, reviewing, approved, rejected) |
+
+---
+
+## ⚡ 12. RecordEvent
+
+| 필드 | 타입 |
+|------|------|
+| id | UUID (PK) |
+| record_id | UUID (FK → Record.id) |
+| user_id | UUID (FK → User.id) |
+| type | enum (goal, assist) |
+
+---
+
+## 🔗 13. 관계 요약
+
+### User
+- User ↔ Team (M:N via TeamMember)
+- User → Post (1:N)
+- User → Comment (1:N)
+- User → RecordEvent (1:N)
+
+---
+
+### Team
+- Team → Match (1:N)
+- Team → Vote (1:N)
+- Team → Post (1:N)
+
+---
+
+### Match
+- Match → Participant (1:N)
+- Match → Lineup (1:N)
+- Match → Record (1:1)
+
+---
+
+### Vote
+- Vote → VoteOption (1:N)
+- VoteOption → VoteResponse (1:N)
+
+---
+
+## 🔥 14. 핵심 제약 조건
+
+- Match는 반드시 두 팀 필요
+- Record는 Match당 1개만 생성 가능
+- Record는 승인 전까지 수정 가능
+- Participant는 Match 확정 후 생성
+
+---
+
+## ⚡ 15. Cascade 정책 (중요)
+
+- Team 삭제 → TeamMember 삭제
+- Post 삭제 → Comment 삭제
+- Match 삭제 → Lineup / Record 삭제
+- Record 삭제 → RecordEvent 삭제
+
+---
+
+## 🚀 16. 인덱스 추천
+
+- User(email)
+- TeamMember(user_id, team_id)
+- Match(team_a_id, team_b_id)
+- Record(match_id)
+- Vote(team_id)
+
+---
+
+## 💡 한 줄 정리
+
+👉  
+“팀 → 매칭 → 참여자 → 라인업 → 기록 흐름으로 이어지는 구조”
+
+---
